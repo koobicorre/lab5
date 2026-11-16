@@ -1,3 +1,4 @@
+
 import ipaddress
 
 
@@ -39,20 +40,88 @@ def subnet_info(cidr):
     }
 
 
+def parse_cidr(text):
+    parts = text.strip().split()
+
+    if not parts:
+        raise ValueError("Пустой ввод")
+
+    if len(parts) == 1:
+        if "/" not in parts[0]:
+            raise ValueError("не указана маска")
+        address = parts[0]
+
+    elif len(parts) == 2:
+        if "/" in parts[0]:
+            raise ValueError("Неверный формат адреса")
+        address = f"{parts[0]}/{parts[1]}"
+
+    else:
+        raise ValueError("Неверный формат адреса")
+
+    try:
+        return ipaddress.ip_interface(address)
+    except ValueError:
+        raise ValueError("Некорректный IP-адрес или маска")
+
+
+def same_subnet(a, b):
+    network = parse_cidr(a).network
+
+    try:
+        second_ip = ipaddress.ip_address(b.strip())
+    except ValueError:
+        raise ValueError("Некорректный второй IP-адрес")
+
+    return second_ip in network
+
+
+def main():
+    while True:
+        try:
+            print("\n==== Сетевой калькулятор ====")
+            print("1 - Информация о подсети")
+            print("2 - Находятся ли два узла в одной подсети")
+            print("3 - План VLSM для своего варианта")
+            print("0 - Выход")
+
+            choice = input("Ваш выбор: ").strip()
+
+            if choice == "0":
+                print("Работа завершена")
+                break
+
+            elif choice == "1":
+                address = input("Введите IP с маской: ")
+                iface = parse_cidr(address)
+
+                print("\nИнформация о подсети:")
+
+                for key, value in subnet_info(str(iface)).items():
+                    print(f"{key:22}: {value}")
+
+            elif choice == "2":
+                first = input("Первый IP с маской: ")
+                second = input("Второй IP без маски: ")
+
+                if same_subnet(first, second):
+                    print("Устройства находятся в одной подсети")
+                else:
+                    print("Устройства находятся в разных подсетях")
+
+            elif choice == "3":
+                print("Планирование VLSM будет добавлено в задании 3")
+
+            else:
+                print("Ошибка: такого пункта меню нет")
+
+        except ValueError as error:
+            print(f"Ошибка: {error}")
+
+        except (KeyboardInterrupt, EOFError):
+            print("\nРабота завершена")
+            break
+
+
 if __name__ == "__main__":
-    addresses = [
-        "192.168.10.35/24",
-        "10.0.0.5/30",
-        "172.16.40.10/20",
-        "169.254.1.5/16",
-        "8.8.8.8/32",
-        "127.0.0.1/8"
-    ]
-
-    for address in addresses:
-        print(f"\n{'=' * 55}")
-        print(f"Проверка: {address}")
-        print("=" * 55)
-
-        for key, value in subnet_info(address).items():
-            print(f"{key:22}: {value}")
+    main()
